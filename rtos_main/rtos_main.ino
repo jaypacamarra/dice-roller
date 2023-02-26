@@ -22,7 +22,7 @@ void TaskReadButtonR( void *pvParameters );
 // semaphore for dice type
 SemaphoreHandle_t xDiceType_semphr;
 
-const String DiceType[] = {"D4", "D6", "D8", "D10", "D12", "D20"};
+const char* sDiceType[] = {"D4", "D6", "D8", "D10", "D12", "D20"};
 const uint8_t D4 = 0;
 const uint8_t D6 = 1;
 const uint8_t D8 = 2;
