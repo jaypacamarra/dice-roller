@@ -1,15 +1,18 @@
 void TaskRoll( void *pvParameters __attribute__((unused)) )  // This is a Task.
 {
-  uint8_t led_pin = 7;
-  uint8_t led_state = LOW;
-  pinMode(led_pin, OUTPUT);
+
+  randomSeed(analogRead(A0));
+  bool shake = false;
 
   for (;;)
   {
-    led_state ^= 1;
-    digitalWrite(led_pin, led_state);
+    // If shake detected, generate roll number
+    if(shake)
+    {
+      ;
+    }
 
     //delay 1000ms
-    vTaskDelay(MS_DELAY(1000)); 
+    vTaskDelay(MS_DELAY(500)); 
   }
 }

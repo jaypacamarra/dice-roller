@@ -1,10 +1,14 @@
 #include <Arduino_FreeRTOS.h>
+#include <string.h>
+#include <semphr.h>
 #include <TFT.h>
 #include <SPI.h>
 
 // define two Tasks for DigitalRead & AnalogRead
 void TaskLCD( void *pvParameters );
 void TaskRoll( void *pvParameters );
+void TaskReadButtonL( void *pvParameters );
+void TaskReadButtonR( void *pvParameters );
 
 
 // pin definition for Arduino UNO
@@ -15,10 +19,17 @@ void TaskRoll( void *pvParameters );
 // macro to convert ms delay properly since rtos ticks are every 15ms
 #define MS_DELAY(x)   (x/15) 
 
+// semaphore for dice type
+SemaphoreHandle_t xDiceType_semphr;
 
-
-// create an instance of the TFT library
-TFT TFTscreen = TFT(cs, dc, rst);
+const String DiceType[] = {"D4", "D6", "D8", "D10", "D12", "D20"};
+const uint8_t D4 = 0;
+const uint8_t D6 = 1;
+const uint8_t D8 = 2;
+const uint8_t D10 = 3;
+const uint8_t D12 = 4;
+const uint8_t D20 = 5;
+int8_t g_DiceType = D20; // variable to hold dice type currently selected, default is D20
 
 
 // the setup function runs once when you press reset or power the board
@@ -29,6 +40,16 @@ void setup() {
   
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB, on LEONARDO, MICRO, YUN, and other 32u4 based boards.
+  }
+
+  // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
+  // because it is sharing a resource, such as the Serial port.
+  // Semaphores should only be used whilst the scheduler is running, but we can set it up here.
+  if ( xDiceType_semphr == NULL )  // Check to confirm that the dice type Semaphore has not already been created.
+  {
+    xDiceType_semphr = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage dice type changes
+    if ( ( xDiceType_semphr ) != NULL )
+      xSemaphoreGive( ( xDiceType_semphr ) );  // Make the dice type variable available for use, by "Giving" the Semaphore.
   }
 
   xTaskCreate(
@@ -42,6 +63,22 @@ void setup() {
   xTaskCreate(
     TaskRoll
     ,  "TaskRoll" // A name just for humans
+    ,  128  // Stack size
+    ,  NULL //Parameters for the task
+    ,  1  // Priority
+    ,  NULL ); //Task Handle
+
+  xTaskCreate(
+    TaskReadButtonL
+    ,  "TaskReadButtonL" // A name just for humans
+    ,  128  // Stack size
+    ,  NULL //Parameters for the task
+    ,  1  // Priority
+    ,  NULL ); //Task Handle
+
+  xTaskCreate(
+    TaskReadButtonR
+    ,  "TaskReadButtonR" // A name just for humans
     ,  128  // Stack size
     ,  NULL //Parameters for the task
     ,  1  // Priority
